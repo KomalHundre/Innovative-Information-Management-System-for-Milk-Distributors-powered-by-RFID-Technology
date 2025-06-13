@@ -1,0 +1,108 @@
+{% extends 'dairy_collection/base.html' %}
+
+{% block title %}Farmers List - DudhDairy{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Farmers List</h2>
+        <a href="{% url 'dairy_collection:farmer_add' %}" class="btn btn-primary">
+            <i class="fas fa-plus-circle"></i> Add New Farmer
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Farmer Name</th>
+                            <th>Phone Number</th>
+                            <th>RFID Number</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for farmer in farmers %}
+                        <tr>
+                            <td>{{ farmer.user.first_name }} {{ farmer.user.last_name }}</td>
+                            <td>{{ farmer.phone_number }}</td>
+                            <td>{{ farmer.rfid_number }}</td>
+                            <td class="text-end">
+                                <div class="btn-group">
+                                    <a href="{% url 'dairy_collection:farmer_edit' farmer.id %}" 
+                                       class="btn btn-sm btn-info me-2">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-danger delete-farmer" 
+                                            data-farmer-id="{{ farmer.id }}"
+                                            data-farmer-name="{{ farmer.user.first_name }} {{ farmer.user.last_name }}">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">No farmers found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to permanently delete farmer <span id="farmerNameSpan" class="fw-bold"></span>?
+                This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete Permanently</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    const deleteForm = document.getElementById('deleteForm');
+    const farmerNameSpan = document.getElementById('farmerNameSpan');
+    
+    // Add click handlers for delete buttons
+    document.querySelectorAll('.delete-farmer').forEach(button => {
+        button.addEventListener('click', function() {
+            const farmerId = this.dataset.farmerId;
+            const farmerName = this.dataset.farmerName;
+            
+            // Update the modal content
+            farmerNameSpan.textContent = farmerName;
+            
+            // Update the form action
+            deleteForm.action = `/dairy/farmer/${farmerId}/delete/`;
+            
+            // Show the modal
+            deleteModal.show();
+        });
+    });
+});
+</script>
+{% endblock %} 

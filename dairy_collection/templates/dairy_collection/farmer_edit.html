@@ -1,0 +1,97 @@
+{% extends 'dairy_collection/base.html' %}
+
+{% block title %}Edit Farmer - DudhDairy{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Edit Farmer</h2>
+            <a href="{% url 'dairy_collection:farmer_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Farmers List
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" action="{% url 'dairy_collection:farmer_edit' farmer.id %}">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" 
+                                   value="{{ farmer.user.first_name }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" 
+                                   value="{{ farmer.user.last_name }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="phone_number" class="form-label">Phone Number</label>
+                            <input type="text" class="form-control" id="phone_number" name="phone_number" 
+                                   value="{{ farmer.phone_number }}"
+                                   pattern="[6-9][0-9]{9}" maxlength="10" required
+                                   title="Enter a 10-digit mobile number starting with 6, 7, 8, or 9">
+                            <div class="form-text">10-digit number starting with 6, 7, 8, or 9</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="rfid_number" class="form-label">RFID Number</label>
+                            <input type="text" class="form-control" id="rfid_number" name="rfid_number" 
+                                   value="{{ farmer.rfid_number }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="bank_account_number" class="form-label">Bank Account Number</label>
+                            <input type="text" class="form-control" id="bank_account_number" name="bank_account_number" 
+                                   value="{{ farmer.bank_account_number }}"
+                                   pattern="\d{9,18}" required
+                                   title="Bank account number must be between 9 and 18 digits">
+                            <div class="form-text">Must be between 9 and 18 digits</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="ifsc_code" class="form-label">IFSC Code</label>
+                            <input type="text" class="form-control" id="ifsc_code" name="ifsc_code" 
+                                   value="{{ farmer.ifsc_code }}"
+                                   pattern="[A-Z]{4}0[A-Z0-9]{6}" required
+                                   title="IFSC code must be in format: 4 letters followed by 0 and 6 alphanumeric characters">
+                            <div class="form-text">Format: 4 letters + 0 + 6 alphanumeric characters</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Address</label>
+                        <textarea class="form-control" id="address" name="address" rows="3" required>{{ farmer.address }}</textarea>
+                    </div>
+
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Convert IFSC code input to uppercase
+    document.getElementById('ifsc_code').addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+});
+</script>
+{% endblock %} 

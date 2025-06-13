@@ -1,0 +1,105 @@
+{% extends 'dairy_collection/base.html' %}
+
+{% block title %}Payment History - DudhDairy{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Payment History</h2>
+            {% if user.is_staff or user.is_superuser %}
+                <a href="{% url 'dairy_collection:pending_payments' %}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle"></i> Pending Payments
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                {% if payments %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    {% if is_staff %}
+                                        <th>Farmer</th>
+                                    {% endif %}
+                                    <th>Period</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Transaction ID</th>
+                                    <th>Created At</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in payments %}
+                                <tr>
+                                    {% if is_staff %}
+                                        <td>{{ payment.farmer.user.first_name }} {{ payment.farmer.user.last_name }}</td>
+                                    {% endif %}
+                                    <td>{{ payment.start_date|date:"M d, Y" }} - {{ payment.end_date|date:"M d, Y" }}</td>
+                                    <td>₹{{ payment.amount }}</td>
+                                    <td>
+                                        {% if payment.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif payment.status == 'completed' %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% elif payment.status == 'failed' %}
+                                            <span class="badge bg-danger">Failed</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ payment.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if payment.transaction_id %}
+                                            <div class="d-flex align-items-center">
+                                                <code class="me-2">{{ payment.transaction_id }}</code>
+                                                <button class="btn btn-sm btn-outline-secondary copy-btn" 
+                                                        data-transaction-id="{{ payment.transaction_id }}"
+                                                        title="Copy Transaction ID">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ payment.created_at|date:"M d, Y H:i" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No payment records found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click handlers for copy buttons
+    document.querySelectorAll('.copy-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const transactionId = this.getAttribute('data-transaction-id');
+            navigator.clipboard.writeText(transactionId).then(() => {
+                // Change button text temporarily to show success
+                const originalHtml = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => {
+                    this.innerHTML = originalHtml;
+                }, 2000);
+            });
+        });
+    });
+});
+</script>
+{% endblock %} 

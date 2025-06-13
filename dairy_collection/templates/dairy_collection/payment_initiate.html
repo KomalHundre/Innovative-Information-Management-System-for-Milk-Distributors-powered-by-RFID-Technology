@@ -1,0 +1,242 @@
+{% extends 'dairy_collection/base.html' %}
+
+{% block title %}Initiate Payment - DudhDairy{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Initiate Payment</h2>
+    
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Payment Details</h5>
+        </div>
+        <div class="card-body">
+            <form id="paymentForm">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="farmer" class="form-label">Select Farmer</label>
+                        <select class="form-select" id="farmer" name="farmer_id" required>
+                            <option value="">Select farmer</option>
+                            {% for farmer in farmers %}
+                            <option value="{{ farmer.id }}">{{ farmer.user.first_name }} {{ farmer.user.last_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="hidden" id="hidden_farmer_id" name="farmer_id" value="">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="payment_period" class="form-label">Payment Period</label>
+                        <select class="form-select" id="payment_period" name="payment_period" required>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mb-3" id="custom_dates" style="display: none;">
+                    <div class="col-md-6">
+                        <label for="start_date" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="end_date" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="payment_method" class="form-label">Payment Method</label>
+                        <select class="form-select" id="payment_method" name="payment_method" required>
+                            <option value="">Select payment method</option>
+                            {% for method in payment_methods %}
+                            <option value="{{ method.id }}">{{ method.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="bank_account" class="form-label">Bank Account Number</label>
+                        <p class="form-control-static" id="bank_account">-</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="ifsc_code" class="form-label">IFSC Code</label>
+                        <p class="form-control-static" id="ifsc_code">-</p>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="total_collections" class="form-label">Total Collections</label>
+                        <p class="form-control-static" id="total_collections">0</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="total_amount" class="form-label">Total Amount</label>
+                        <p class="form-control-static" id="total_amount">₹0.00</p>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" id="calculateBtn">
+                        Calculate Amount
+                    </button>
+                    <button type="button" class="btn btn-primary" id="mockPaymentBtn" disabled>
+                        Initiate Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentPeriodSelect = document.getElementById('payment_period');
+    const customDatesDiv = document.getElementById('custom_dates');
+    const farmerSelect = document.getElementById('farmer');
+    const calculateBtn = document.getElementById('calculateBtn');
+    const mockPaymentBtn = document.getElementById('mockPaymentBtn');
+    const form = document.getElementById('paymentForm');
+
+    paymentPeriodSelect.addEventListener('change', function() {
+        if (this.value === 'custom') {
+            customDatesDiv.style.display = 'flex';
+        } else {
+            customDatesDiv.style.display = 'none';
+        }
+    });
+
+    farmerSelect.addEventListener('change', function() {
+        const farmerId = this.value;
+        if (farmerId) {
+            fetch(`/dairy/farmer/${farmerId}/details/`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('bank_account').textContent = data.bank_account_number || '-';
+                    document.getElementById('ifsc_code').textContent = data.ifsc_code || '-';
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    });
+
+    calculateBtn.addEventListener('click', function() {
+        const formData = new FormData(form);
+        
+        fetch('/dairy/payments/calculate/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('total_collections').textContent = data.collections_count;
+                document.getElementById('total_amount').textContent = '₹' + data.total_amount;
+                mockPaymentBtn.disabled = false;
+            } else {
+                alert(data.message);
+                mockPaymentBtn.disabled = true;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while calculating the payment amount.');
+            mockPaymentBtn.disabled = true;
+        });
+    });
+
+    mockPaymentBtn.addEventListener('click', function() {
+        alert('Your payment message will be sent');
+        const formData = new FormData(form);
+        const data = {
+            farmer_id: formData.get('farmer_id'),
+            payment_method: formData.get('payment_method'),
+            payment_period: formData.get('payment_period'),
+            amount: document.getElementById('total_amount').textContent.replace('₹', '')
+        };
+
+        if (formData.get('payment_period') === 'custom') {
+            data.start_date = formData.get('start_date');
+            data.end_date = formData.get('end_date');
+        }
+
+        fetch('/dairy/payment/mock-process/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Payment processed successfully!\nTransaction ID: ' + data.transaction_id);
+                window.location.href = '/dairy/payments/';
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while processing the payment.');
+        });
+    });
+
+    // Autofill from query params
+    const farmerId = getQueryParam('farmer_id');
+    const unpaidSince = getQueryParam('unpaid_since');
+    const latestCollection = getQueryParam('latest_collection');
+    const pendingAmount = getQueryParam('pending_amount');
+
+    if (farmerId) {
+        document.getElementById('farmer').value = farmerId;
+        document.getElementById('hidden_farmer_id').value = farmerId;
+        document.getElementById('farmer').addEventListener('change', function(e) {
+            this.value = farmerId;
+        });
+        document.getElementById('farmer').disabled = true;
+        document.getElementById('farmer').dispatchEvent(new Event('change'));
+    }
+    if (unpaidSince && latestCollection) {
+        document.getElementById('payment_period').value = 'custom';
+        document.getElementById('payment_period').dispatchEvent(new Event('change'));
+        document.getElementById('start_date').value = unpaidSince;
+        document.getElementById('end_date').value = latestCollection;
+        document.getElementById('start_date').readOnly = true;
+        document.getElementById('end_date').readOnly = true;
+    }
+    if (pendingAmount) {
+        document.getElementById('total_amount').textContent = '₹' + pendingAmount;
+        document.getElementById('calculateBtn').disabled = true;
+        document.getElementById('mockPaymentBtn').disabled = false;
+    }
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %} 

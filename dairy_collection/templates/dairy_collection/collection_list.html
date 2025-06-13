@@ -1,0 +1,68 @@
+{% extends 'dairy_collection/base.html' %}
+
+{% block title %}Milk Collections - DudhDairy{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Today's Collections</h2>
+            <a href="{% url 'dairy_collection:milk_collection_create' %}" class="btn btn-primary">
+                <i class="bx bx-plus-circle"></i> Add Collection
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                {% if collections %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    {% if is_manager %}
+                                        <th>Farmer</th>
+                                    {% endif %}
+                                    <th>Session</th>
+                                    <th>Type</th>
+                                    <th>Quantity (L)</th>
+                                    <th>Fat (%)</th>
+                                    <th>SNF (%)</th>
+                                    <th>Rate (₹)</th>
+                                    <th>Amount (₹)</th>
+                                    <th>Collection Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for collection in collections %}
+                                <tr>
+                                    {% if is_manager %}
+                                        <td>{{ collection.farmer.user.first_name }} {{ collection.farmer.user.last_name }}</td>
+                                    {% endif %}
+                                    <td>{{ collection.session|title }}</td>
+                                    <td>{{ collection.get_milk_type_display }}</td>
+                                    <td>{{ collection.quantity }}</td>
+                                    <td>{{ collection.fat_content }}</td>
+                                    <td>{{ collection.snf_content }}</td>
+                                    <td>{{ collection.price_per_liter }}</td>
+                                    <td>{{ collection.total_amount }}</td>
+                                    <td>{{ collection.date|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No collections recorded for today.</p>
+                    <a href="{% url 'dairy_collection:milk_collection_create' %}" class="btn btn-primary">
+                        Add Collection
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

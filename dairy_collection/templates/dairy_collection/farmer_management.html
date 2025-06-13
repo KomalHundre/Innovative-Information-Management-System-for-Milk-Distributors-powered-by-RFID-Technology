@@ -1,0 +1,226 @@
+{% extends 'dairy_collection/base.html' %}
+
+{% block title %}Farmer Management - DudhDairy{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Farmer Management</h2>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addFarmerModal">
+                <i class="bx bx-plus-circle"></i> Add New Farmer
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                {% if farmers %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>RFID Number</th>
+                                    <th>Phone</th>
+                                    <th>Address</th>
+                                    <th>Bank Account</th>
+                                    <th>IFSC Code</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for farmer in farmers %}
+                                <tr>
+                                    <td>{{ farmer.user.first_name }} {{ farmer.user.last_name }}</td>
+                                    <td>{{ farmer.rfid_number }}</td>
+                                    <td>{{ farmer.phone_number }}</td>
+                                    <td>{{ farmer.address }}</td>
+                                    <td>{{ farmer.bank_account_number }}</td>
+                                    <td>{{ farmer.ifsc_code }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info edit-farmer" data-farmer-id="{{ farmer.id }}"
+                                                data-bs-toggle="modal" data-bs-target="#editFarmerModal">
+                                            <i class="bx bx-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger delete-farmer" data-farmer-id="{{ farmer.id }}"
+                                                data-bs-toggle="modal" data-bs-target="#deleteFarmerModal">
+                                            <i class="bx bx-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No farmers registered yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Farmer Modal -->
+<div class="modal fade" id="addFarmerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Farmer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'dairy_collection:farmer_add' %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="first_name" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="last_name" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="rfid_number" class="form-label">RFID Number</label>
+                            <input type="text" class="form-control" id="rfid_number" name="rfid_number" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="phone_number" class="form-label">Phone Number</label>
+                            <input type="text" class="form-control" id="phone_number" name="phone_number" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="bank_account_number" class="form-label">Bank Account Number</label>
+                            <input type="text" class="form-control" id="bank_account_number" name="bank_account_number" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="ifsc_code" class="form-label">IFSC Code</label>
+                            <input type="text" class="form-control" id="ifsc_code" name="ifsc_code" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Address</label>
+                        <textarea class="form-control" id="address" name="address" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Farmer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Farmer Modal -->
+<div class="modal fade" id="editFarmerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Farmer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" id="editFarmerForm">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" id="edit_farmer_id" name="farmer_id">
+                    <!-- Same fields as Add Farmer form -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="edit_first_name" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="edit_first_name" name="first_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_last_name" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="edit_last_name" name="last_name" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="edit_rfid_number" class="form-label">RFID Number</label>
+                            <input type="text" class="form-control" id="edit_rfid_number" name="rfid_number" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_phone_number" class="form-label">Phone Number</label>
+                            <input type="text" class="form-control" id="edit_phone_number" name="phone_number" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="edit_bank_account_number" class="form-label">Bank Account Number</label>
+                            <input type="text" class="form-control" id="edit_bank_account_number" name="bank_account_number" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_ifsc_code" class="form-label">IFSC Code</label>
+                            <input type="text" class="form-control" id="edit_ifsc_code" name="ifsc_code" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_address" class="form-label">Address</label>
+                        <textarea class="form-control" id="edit_address" name="address" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Farmer Modal -->
+<div class="modal fade" id="deleteFarmerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Farmer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this farmer? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" id="deleteFarmerForm" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" id="delete_farmer_id" name="farmer_id">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Edit farmer
+    document.querySelectorAll('.edit-farmer').forEach(button => {
+        button.addEventListener('click', function() {
+            const farmerId = this.dataset.farmerId;
+            // Here you would typically fetch farmer data via AJAX and populate the form
+            document.getElementById('edit_farmer_id').value = farmerId;
+            document.getElementById('editFarmerForm').action = `/dairy/farmer/${farmerId}/edit/`;
+        });
+    });
+
+    // Delete farmer
+    document.querySelectorAll('.delete-farmer').forEach(button => {
+        button.addEventListener('click', function() {
+            const farmerId = this.dataset.farmerId;
+            document.getElementById('delete_farmer_id').value = farmerId;
+            document.getElementById('deleteFarmerForm').action = `/dairy/farmer/${farmerId}/delete/`;
+        });
+    });
+});
+</script>
+{% endblock %} 

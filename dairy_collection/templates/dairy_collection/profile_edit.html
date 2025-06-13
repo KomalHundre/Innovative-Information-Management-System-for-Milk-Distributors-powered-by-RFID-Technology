@@ -1,0 +1,149 @@
+{% extends 'dairy_collection/base.html' %}
+
+{% block title %}{% if is_admin %}Dairy Manager's Profile{% else %}Edit Profile{% endif %} - DudhDairy{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">{% if is_admin %}Dairy Manager's Profile{% else %}Edit Profile{% endif %}</h4>
+                </div>
+                <div class="card-body">
+                    {% if is_admin %}
+                        <!-- Admin Profile Form -->
+                        <form method="post" class="needs-validation" novalidate>
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email"
+                                       value="{{ user.email }}" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="username" name="username"
+                                       value="{{ user.username }}" readonly>
+                            </div>
+                            <div class="text-muted mb-3">
+                                <small>Contact system administrator to update admin profile details.</small>
+                            </div>
+                        </form>
+                    {% else %}
+                        <!-- Farmer Profile Form -->
+                        <form method="post" class="needs-validation" novalidate>
+                            {% csrf_token %}
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="first_name" class="form-label">First Name</label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name"
+                                           value="{{ farmer.user.first_name }}" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="last_name" class="form-label">Last Name</label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name"
+                                           value="{{ farmer.user.last_name }}" readonly>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="phone_number" class="form-label">Phone Number</label>
+                                <input type="text" class="form-control" id="phone_number" name="phone_number"
+                                       value="{{ farmer.phone_number }}" pattern="^[6-9]\d{9}$" required>
+                                <div class="form-text">10-digit number starting with 6, 7, 8, or 9</div>
+                                <div class="invalid-feedback">
+                                    Please enter a valid phone number
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="bank_account_number" class="form-label">Bank Account Number</label>
+                                    <input type="text" class="form-control" id="bank_account_number"
+                                           name="bank_account_number" value="{{ farmer.bank_account_number }}"
+                                           pattern="^\d{9,18}$" required>
+                                    <div class="form-text">Must be between 9 and 18 digits</div>
+                                    <div class="invalid-feedback">
+                                        Please enter a valid bank account number
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="ifsc_code" class="form-label">IFSC Code</label>
+                                    <input type="text" class="form-control" id="ifsc_code" name="ifsc_code"
+                                           value="{{ farmer.ifsc_code }}" pattern="^[A-Z]{4}0[A-Z0-9]{6}$" required>
+                                    <div class="form-text">Format: ABCD0XXXXXX</div>
+                                    <div class="invalid-feedback">
+                                        Please enter a valid IFSC code
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="address" class="form-label">Address</label>
+                                <textarea class="form-control" id="address" name="address" rows="3" required>{{ farmer.address }}</textarea>
+                                <div class="invalid-feedback">
+                                    Please enter your address
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        });
+    });
+
+    // Phone number validation
+    const phoneInput = document.getElementById('phone_number');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            this.value = this.value.replace(/\D/g, '');
+            if (this.value.length > 10) {
+                this.value = this.value.slice(0, 10);
+            }
+        });
+    }
+
+    // Bank account number validation
+    const accountInput = document.getElementById('bank_account_number');
+    if (accountInput) {
+        accountInput.addEventListener('input', function(e) {
+            this.value = this.value.replace(/\D/g, '');
+            if (this.value.length > 18) {
+                this.value = this.value.slice(0, 18);
+            }
+        });
+    }
+
+    // IFSC code validation
+    const ifscInput = document.getElementById('ifsc_code');
+    if (ifscInput) {
+        ifscInput.addEventListener('input', function(e) {
+            this.value = this.value.toUpperCase();
+            this.value = this.value.replace(/[^A-Z0-9]/g, '');
+            if (this.value.length >= 5) {
+                this.value = this.value.substring(0, 4) + '0' + this.value.substring(5);
+            }
+        });
+    }
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,130 @@
+{% extends 'dairy_collection/base.html' %}
+
+{% block title %}Dashboard - DudhDairy{% endblock %}
+
+{% block head %}
+<meta http-equiv="refresh" content="86400">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <h2>Welcome, {{ request.user.first_name|default:request.user.username }}</h2>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Today's Collections -->
+    <div class="col-md-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Today's Collections</h5>
+            </div>
+            <div class="card-body">
+                {% if todays_collections %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Farmer Number</th>
+                                    <th>Farmer Name</th>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Session</th>
+                                    <th>Type</th>
+                                    <th>Quantity</th>
+                                    <th>Fat</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for collection in todays_collections %}
+                                <tr>
+                                    <td>{{ collection.farmer.rfid_number }}</td>
+                                    <td>{{ collection.farmer.user.first_name }} {{ collection.farmer.user.last_name }}</td>
+                                    <td>{{ collection.date|date:"d/m/Y" }}</td>
+                                    <td>{{ collection.date|date:"H:i" }}</td>
+                                    <td>{{ collection.session|title }}</td>
+                                    <td>{{ collection.get_milk_type_display }}</td>
+                                    <td>{{ collection.quantity }} L</td>
+                                    <td>{{ collection.fat_content }}%</td>
+                                    <td>₹{{ collection.total_amount }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No collections recorded today.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Statistics -->
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Today's Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <h6 class="text-muted">Cow's Milk</h6>
+                        <div class="d-flex justify-content-between">
+                            <span>Quantity:</span>
+                            <span>{{ today_cow_stats.quantity|default:"0" }} L</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Amount:</span>
+                            <span>₹{{ today_cow_stats.amount|default:"0"|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <h6 class="text-muted">Buffalo's Milk</h6>
+                        <div class="d-flex justify-content-between">
+                            <span>Quantity:</span>
+                            <span>{{ today_buffalo_stats.quantity|default:"0" }} L</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Amount:</span>
+                            <span>₹{{ today_buffalo_stats.amount|default:"0"|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Weekly Stats -->
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Weekly Statistics ({{ week_start|date:"d/m/Y" }} - {{ week_end|date:"d/m/Y" }})</h5>
+            </div>
+            <div class="card-body">
+                {% if weekly_stats.total_quantity %}
+                    <div class="row text-center">
+                        <div class="col-md-4 col-12 mb-3">
+                            <h6 class="text-muted">Total Quantity</h6>
+                            <h4>{{ weekly_stats.total_quantity|floatformat:2 }} L</h4>
+                        </div>
+                        <div class="col-md-4 col-12 mb-3">
+                            <h6 class="text-muted">Total Amount</h6>
+                            <h4>₹{{ weekly_stats.total_amount|floatformat:2 }}</h4>
+                        </div>
+                        <div class="col-md-4 col-12 mb-3">
+                            <h6 class="text-muted">Average Fat</h6>
+                            <h4>{{ weekly_stats.avg_fat|floatformat:1 }}%</h4>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No data available for the past week.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

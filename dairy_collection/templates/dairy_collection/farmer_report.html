@@ -1,0 +1,127 @@
+{% extends 'dairy_collection/base.html' %}
+
+{% block title %}{{ farmer.user.first_name }}'s Report - DudhDairy{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2>{{ farmer.user.first_name }} {{ farmer.user.last_name }}'s Report</h2>
+                <p class="text-muted">Phone: {{ farmer.phone_number }} | RFID: {{ farmer.rfid_number }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Quantity (L)</th>
+                                <th>Fat (%)</th>
+                                <th>Amount (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for collection in collections %}
+                            <tr>
+                                <td>{{ collection.date|date:"d/m/Y" }}</td>
+                                <td>{{ collection.quantity|floatformat:2 }}</td>
+                                <td>{{ collection.fat_content|floatformat:1 }}</td>
+                                <td>{{ collection.total_amount|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">No collections found for this farmer.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        {% if collections %}
+                        <tfoot>
+                            <tr class="font-weight-bold">
+                                <td>Total</td>
+                                <td>{{ total_quantity|floatformat:2 }} L</td>
+                                <td>{{ average_fat|floatformat:1 }}%</td>
+                                <td>₹{{ total_amount|floatformat:2 }}</td>
+                            </tr>
+                        </tfoot>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if collections %}
+<form id="sms-csrf-form">{% csrf_token %}</form>
+<div class="row mt-4">
+    <div class="col-md-12 text-end">
+        <button type="button" class="btn btn-success btn-lg send-sms" data-farmer-id="{{ farmer.id }}">
+            <i class="fas fa-sms"></i> Send SMS Report
+        </button>
+        <button type="button" class="btn btn-primary btn-lg ms-2" id="download-pdf-btn">
+            <i class="fas fa-download"></i> Download PDF
+        </button>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sendSmsButton = document.querySelector('.send-sms');
+    if (sendSmsButton) {
+        sendSmsButton.addEventListener('click', function() {
+            const farmerId = this.getAttribute('data-farmer-id');
+            
+            if (confirm('Are you sure you want to send an SMS report to this farmer?')) {
+                fetch('{% url "dairy_collection:send_report_sms" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        farmer_id: farmerId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('SMS report sent successfully!');
+                    } else {
+                        alert('Failed to send SMS: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while sending the SMS.');
+                });
+            }
+        });
+    }
+
+    // Download PDF button handler
+    const downloadPdfBtn = document.getElementById('download-pdf-btn');
+    if (downloadPdfBtn) {
+        downloadPdfBtn.addEventListener('click', function() {
+            window.location.href = '{% url "dairy_collection:farmer_report_pdf" farmer.id %}';
+        });
+    }
+
+    if (pendingAmount) {
+        document.getElementById('total_amount').textContent = '₹' + pendingAmount;
+        document.getElementById('calculateBtn').disabled = true;
+        document.getElementById('mockPaymentBtn').disabled = false;
+    }
+});
+</script>
+{% endblock %} 

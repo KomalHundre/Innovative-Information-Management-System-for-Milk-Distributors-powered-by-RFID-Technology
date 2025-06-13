@@ -1,0 +1,66 @@
+{% extends 'dairyfarm/base.html' %}
+
+{% block left_content %}
+    <div class="card">
+        <div class="card-header">
+            <h5>Weekly Report</h5>
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Farmer Name</th>
+                        <th>Total Quantity (L)</th>
+                        <th>Collection Count</th>
+                        <th>Total Amount (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in report_data %}
+                    <tr>
+                        <td>{{ data.farmer_name }}</td>
+                        <td>{{ data.total_quantity }}</td>
+                        <td>{{ data.collection_count }}</td>
+                        <td>₹{{ data.total_amount }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5>Process Weekly Payments</h5>
+        </div>
+        <div class="card-body">
+            <button id="process-payments" class="btn btn-primary">Process All Payments</button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('process-payments').addEventListener('click', async function() {
+    try {
+        const response = await fetch('/process-payment/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            alert('Payments processed successfully');
+            window.location.reload();
+        } else {
+            alert('Error processing payments');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error processing payments');
+    }
+});
+</script>
+{% endblock %} 

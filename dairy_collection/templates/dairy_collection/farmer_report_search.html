@@ -1,0 +1,139 @@
+{% extends 'dairy_collection/base.html' %}
+
+{% block title %}Farmer Reports - DudhDairy{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <h2>Farmer Reports</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Search Reports</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" action="{% url 'dairy_collection:farmer_report_search' %}">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="farmer_id" class="form-label">Select Farmer</label>
+                            <select class="form-control" id="farmer_id" name="farmer_id">
+                                <option value="">All Farmers</option>
+                                {% for farmer in farmers %}
+                                    <option value="{{ farmer.id }}" {% if selected_farmer_id == farmer.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ farmer.user.first_name }} {{ farmer.user.last_name }} ({{ farmer.rfid_number }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date|date:'Y-m-d' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="end_date" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date|date:'Y-m-d' }}">
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary">Search</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Report Results</h5>
+            </div>
+            <div class="card-body">
+                {% if reports %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Farmer Name</th>
+                                    <th>Date</th>
+                                    <th>Quantity (L)</th>
+                                    <th>Fat (%)</th>
+                                    <th>Amount (₹)</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for report in reports %}
+                                <tr>
+                                    <td>{{ report.farmer.user.first_name }} {{ report.farmer.user.last_name }}</td>
+                                    <td>{{ report.start_date|date:"d/m/Y" }} - {{ report.end_date|date:"d/m/Y" }}</td>
+                                    <td>{{ report.total_quantity|floatformat:2 }}</td>
+                                    <td>{{ report.average_fat|floatformat:1 }}</td>
+                                    <td>{{ report.total_amount|floatformat:2 }}</td>
+                                    <td>
+                                        <a href="{% url 'dairy_collection:report_detail' report.id %}" class="btn btn-sm btn-info">
+                                            <i class="bx bx-detail"></i> View
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-success send-sms" data-farmer-id="{{ report.farmer.id }}" data-report-id="{{ report.id }}">
+                                            <i class="bx bx-message-detail"></i> Send SMS
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No reports found for the selected criteria.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle SMS sending
+    const sendSmsButtons = document.querySelectorAll('.send-sms');
+    sendSmsButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const farmerId = this.getAttribute('data-farmer-id');
+            const reportId = this.getAttribute('data-report-id');
+            
+            if (confirm('Are you sure you want to send an SMS to this farmer with their report details?')) {
+                fetch('{% url "dairy_collection:send_report_sms" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        farmer_id: farmerId,
+                        report_id: reportId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('SMS sent successfully!');
+                    } else {
+                        alert('Failed to send SMS: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while sending the SMS.');
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 
